@@ -93,6 +93,8 @@ def replace_symbols(text, lang="en"):
     elif lang== "es":
         text=text.replace("&","y")
         text = text.replace("'", "")
+    elif lang== "ht":
+        text=text.replace("&","epi")
     return text
 
 def unicleaners(text, cased=False, lang='en'):

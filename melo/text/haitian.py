@@ -34,7 +34,7 @@ def g2p(text, pad_start_end=True, tokenized=None):
       - Optionally pads the start and end of the phoneme list.
     """
     if tokenized is None:
-        tokenized = tokenizer.tokenize(text, add_special_tokens=False)
+        tokenized = tokenizer.tokenize(text)
     ph_groups = []
     for t in tokenized:
         # if it's not a subword token append to the group
@@ -71,7 +71,7 @@ def g2p(text, pad_start_end=True, tokenized=None):
 
 
 def get_bert_feature(text, word2ph, device=None):
-    from text import haitian_bert
+    from . import haitian_bert
     return haitian_bert.get_bert_feature(text, word2ph, device=device)
 
 if __name__ == "__main__":
@@ -80,6 +80,7 @@ if __name__ == "__main__":
     print("Normalized text:", norm_text)
     
     phones, tones, word2ph = g2p(norm_text)
+    print(word2ph)
+    bert = get_bert_feature(norm_text, word2ph)
     print("Phonemes:", phones)
-    print("Tones:", tones)
-    print("Word2Ph Mapping:", word2ph)
+    print(len(phones), tones, sum(word2ph), bert.shape)
