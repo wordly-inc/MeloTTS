@@ -1,6 +1,9 @@
 import re
 from phonemizer import phonemize
+from transformers import AutoTokenizer
 
+MODEL_ID = 'bert-base-multilingual-cased'
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 def distribute_phone(n_phone, n_word):
     """
     Evenly distribute `n_phone` phonemes across `n_word` parts.
@@ -25,31 +28,39 @@ def g2p(text, pad_start_end=True, tokenized=None):
     """
     Converts Haitian Creole text to its phonemic representation.
     This function:
-      - Splits the text (by whitespace) into words.
+      - Tokenize ht text into tokens.
       - Uses the phonemizer with the eSpeak backend (language "ht") to generate IPA.
       - Distributes the resulting phonemes into a `word2ph` mapping.
       - Optionally pads the start and end of the phoneme list.
     """
     if tokenized is None:
-        # For simplicity, assume words are space-delimited.
-        tokenized = text.split()
+        tokenized = tokenizer.tokenize(text, add_special_tokens=False)
+    ph_groups = []
+    for t in tokenized:
+        # if it's not a subword token append to the group
+        if not t.startswith("#"):
+            ph_groups.append([t])
+        else:
+            ph_groups[-1].append(t.replace("#", ""))
     
     phones = []
-    tones = []  # Placeholder for tone information (unused here)
-    word2ph = []  # List mapping each word token to its number of phonemes
-
-    for word in tokenized:
-        # Use the phonemizer to get an IPA string for the word using eSpeak for Haitian Creole.
-        ipa = phonemize(word, language="ht", backend="espeak", strip=True, phoneme_separator=" ")
-        # Split the IPA output by spaces into phoneme symbols.
-        phone_list = ipa.split()
-        if len(phone_list) == 0:
+    tones = []
+    word2ph = []
+    for group in ph_groups:
+        w = "".join(group)
+        phone_len = 0
+        word_len = len(group)
+        if w == '[UNK]':
             phone_list = ['UNK']
-        phone_len = len(phone_list)
-        # For a single word, simply set the mapping to the phone count.
-        word2ph.extend(distribute_phone(phone_len, 1))
-        phones.extend(phone_list)
-        tones.extend([0] * phone_len)
+        else:
+            phone_list = list(filter(lambda p: p != " ", phonemize(w, language="ht", backend="espeak", strip=True)))
+    
+        for ph in phone_list:
+            phones.append(ph)
+            tones.append(0)
+            phone_len += 1
+        aaa = distribute_phone(phone_len, word_len)
+        word2ph += aaa
 
     if pad_start_end:
         phones = ["_"] + phones + ["_"]
@@ -58,8 +69,13 @@ def g2p(text, pad_start_end=True, tokenized=None):
 
     return phones, tones, word2ph
 
+
+def get_bert_feature(text, word2ph, device=None):
+    from text import haitian_bert
+    return haitian_bert.get_bert_feature(text, word2ph, device=device)
+
 if __name__ == "__main__":
-    sample_text = "Bonjou, kijan ou ye? Mwen byen, mesi!"
+    sample_text = "Lavwadlamerik se pi gwo òganizasyon nouvèl medya entènasyonal Lèzetazini."
     norm_text = text_normalize(sample_text)
     print("Normalized text:", norm_text)
     
