@@ -1,12 +1,12 @@
 import re
-from phonemizer.backend import ESpeakBackend  # Import the backend class directly
+from phonemizer.backend import BACKENDS  # Import the BACKENDS dictionary
 from transformers import AutoTokenizer
 
 MODEL_ID = 'bert-base-multilingual-cased'
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
-# Initialize the eSpeak backend for Haitian Creole.
-phoneme_backend = ESpeakBackend("ht", strip=True)
+# Initialize the eSpeak backend for Haitian Creole using the BACKENDS dictionary.
+phoneme_backend = BACKENDS['espeak']("ht", language_switch="remove-flags")
 
 def distribute_phone(n_phone, n_word):
     """
@@ -91,7 +91,8 @@ def g2p(text, pad_start_end=True, tokenized=None):
             phone_list = ['UNK']
         else:
             # Use the already initialized backend's phonemize() method.
-            phone_list = list(filter(lambda p: p != " ", phoneme_backend.phonemize(w)))
+            phone = phoneme_backend.phonemize([w])[0].strip()
+            phone_list = list(filter(lambda p: p != " ", phone))
 
         for ph in phone_list:
             phones.append(ph)
