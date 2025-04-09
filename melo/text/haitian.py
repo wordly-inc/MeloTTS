@@ -15,6 +15,36 @@ def distribute_phone(n_phone, n_word):
         phones_per_word[min_index] += 1
     return phones_per_word
 
+def number_to_haitian_creole(num):
+    units = {0: "zewo", 1: "youn", 2: "de", 3: "twa", 4: "kat", 5: "senk",
+             6: "sis", 7: "sèt", 8: "uit", 9: "nèf"}
+    teens = {10: "dis", 11: "onz", 12: "douz", 13: "trèz", 14: "katorz",
+             15: "kenz", 16: "sèz", 17: "disèt", 18: "dizuit", 19: "diznèf"}
+    tens = {20: "ven", 30: "trant", 40: "karant", 50: "senkant",
+            60: "swasant", 70: "swasant-diz", 80: "katreven", 90: "katreven-diz"}
+    num = int(num)
+    if num < 10:
+        return units[num]
+    elif num < 20:
+        return teens[num]
+    elif num < 100:
+        div, mod = divmod(num, 10)
+        if mod == 0:
+            return tens[div * 10]
+        return f"{tens[div * 10]}-{units[mod]}"
+    elif num < 1000:
+        div, mod = divmod(num, 100)
+        if mod == 0:
+            return f"{units[div]} san"
+        return f"{units[div]} san {number_to_haitian_creole(mod)}"
+    elif num < 1000000:
+        div, mod = divmod(num, 1000)
+        if mod == 0:
+            return f"{number_to_haitian_creole(div)} mil"
+        return f"{number_to_haitian_creole(div)} mil {number_to_haitian_creole(mod)}"
+    else:
+        return str(num)
+    
 def text_normalize(text):
     """
     Apply basic text normalization for Haitian Creole.
@@ -22,7 +52,9 @@ def text_normalize(text):
     """
     text = text.strip()  # remove leading/trailing whitespace
     text = re.sub(r'\s+', ' ', text)  # collapse multiple spaces to one
-    return text
+    def replace_number(match):
+        return number_to_haitian_creole(match.group())
+    return re.sub(r'\d+', replace_number, text)
 
 def g2p(text, pad_start_end=True, tokenized=None):
     """
