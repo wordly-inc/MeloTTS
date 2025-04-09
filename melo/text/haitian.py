@@ -1,9 +1,13 @@
 import re
-from phonemizer import phonemize
+from phonemizer.backend import ESpeakBackend  # Import the backend class directly
 from transformers import AutoTokenizer
 
 MODEL_ID = 'bert-base-multilingual-cased'
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+
+# Initialize the eSpeak backend for Haitian Creole.
+phoneme_backend = ESpeakBackend("ht", strip=True)
+
 def distribute_phone(n_phone, n_word):
     """
     Evenly distribute `n_phone` phonemes across `n_word` parts.
@@ -44,7 +48,7 @@ def number_to_haitian_creole(num):
         return f"{number_to_haitian_creole(div)} mil {number_to_haitian_creole(mod)}"
     else:
         return str(num)
-    
+
 def text_normalize(text):
     """
     Apply basic text normalization for Haitian Creole.
@@ -60,8 +64,8 @@ def g2p(text, pad_start_end=True, tokenized=None):
     """
     Converts Haitian Creole text to its phonemic representation.
     This function:
-      - Tokenize ht text into tokens.
-      - Uses the phonemizer with the eSpeak backend (language "ht") to generate IPA.
+      - Tokenizes text into tokens.
+      - Uses the explicitly initialized phonemizer backend with eSpeak (language "ht") to generate IPA.
       - Distributes the resulting phonemes into a `word2ph` mapping.
       - Optionally pads the start and end of the phoneme list.
     """
@@ -69,12 +73,13 @@ def g2p(text, pad_start_end=True, tokenized=None):
         tokenized = tokenizer.tokenize(text)
     ph_groups = []
     for t in tokenized:
-        # if it's not a subword token append to the group
+        # If the token does not start with the subword marker, begin a new group.
         if not t.startswith("#"):
             ph_groups.append([t])
         else:
+            # Remove the subword marker and append.
             ph_groups[-1].append(t.replace("#", ""))
-    
+
     phones = []
     tones = []
     word2ph = []
@@ -85,14 +90,17 @@ def g2p(text, pad_start_end=True, tokenized=None):
         if w == '[UNK]':
             phone_list = ['UNK']
         else:
-            phone_list = list(filter(lambda p: p != " ", phonemize(w, language="ht", backend="espeak", strip=True)))
-    
+            # Use the already initialized backend's phonemize() method.
+            phone_list = list(filter(lambda p: p != " ", phoneme_backend.phonemize(w)))
+
         for ph in phone_list:
             phones.append(ph)
             tones.append(0)
             phone_len += 1
-        aaa = distribute_phone(phone_len, word_len)
-        word2ph += aaa
+
+        # Evenly distribute the phonemes across subword tokens.
+        distribution = distribute_phone(phone_len, word_len)
+        word2ph += distribution
 
     if pad_start_end:
         phones = ["_"] + phones + ["_"]
@@ -100,7 +108,6 @@ def g2p(text, pad_start_end=True, tokenized=None):
         word2ph = [1] + word2ph + [1]
 
     return phones, tones, word2ph
-
 
 def get_bert_feature(text, word2ph, device=None):
     from . import haitian_bert
@@ -112,7 +119,8 @@ if __name__ == "__main__":
     print("Normalized text:", norm_text)
     
     phones, tones, word2ph = g2p(norm_text)
-    print(word2ph)
+    print("Word to phoneme mapping:", word2ph)
+    
     bert = get_bert_feature(norm_text, word2ph)
     print("Phonemes:", phones)
-    print(len(phones), tones, sum(word2ph), bert.shape)
+    print("Details:", len(phones), tones, sum(word2ph), bert.shape)

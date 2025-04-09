@@ -53,7 +53,7 @@ def main(
             try:
                 utt, spk, language, text = line.strip().split("|")
                 utt = utt.strip()
-                norm_text, phones, tones, word2ph, bert = clean_text_bert(text, language, device='cuda')
+                norm_text, phones, tones, word2ph, bert = clean_text_bert(text, language)
                 for ph in phones:
                     if ph not in symbols and ph not in new_symbols:
                         new_symbols.append(ph)

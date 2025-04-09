@@ -16,7 +16,7 @@ def get_bert_feature(text, word2ph, device=None):
       are repeated according to the provided `word2ph` mapping.
     """
     global model
-    if sys.platform == "darwin" and torch.backends.mps.is_available() and device == "cpu":
+    if sys.platform == "darwin" and torch.backends.mps.is_available():
         device = "mps"
     if not device:
         device = "cuda" if torch.cuda.is_available() else "cpu"
