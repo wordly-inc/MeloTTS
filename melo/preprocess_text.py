@@ -76,9 +76,8 @@ def main(
                     )
                 )
                 bert_path = utt.replace(".wav", ".bert.pt")
-                dir = os.path.dirname(metadata)
-                os.makedirs(dir, exist_ok=True)
-                torch.save(bert.cpu(), os.path.join(dir, bert_path))
+                os.makedirs(os.path.dirname(bert_path), exist_ok=True)
+                torch.save(bert.cpu(), bert_path)
             except Exception as error:
                 print("err!", line, error)
 
