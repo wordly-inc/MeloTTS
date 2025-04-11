@@ -1,5 +1,5 @@
 # punctuation = ["!", "?", "…", ",", ".", "'", "-"]
-punctuation = ["!", "?", "…", ",", ".", "'", "-", "¿", "¡"]
+punctuation = ["!", "?", "…", ",", ".", "'", "-", "¿", "¡", ";"]
 pu_symbols = punctuation + ["SP", "UNK"]
 pad = "_"
 
@@ -288,9 +288,12 @@ ht_symbols = [
     "u",
     "v",
     "w",
-    "y"
+    "y",
+    "ɛ̃",
+    "dʒ",
+    "aɪ"
 ]
-num_ht_tones=2
+num_ht_tones=3
 # combine all symbols
 normal_symbols = sorted(set(zh_symbols + ja_symbols + en_symbols + kr_symbols + es_symbols + fr_symbols + de_symbols + ru_symbols + ht_symbols))
 symbols = [pad] + normal_symbols + pu_symbols

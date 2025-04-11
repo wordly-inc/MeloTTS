@@ -107,6 +107,9 @@ def g2p(text, pad_start_end=True, tokenized=None):
             if ph.startswith("ˈ"):
                 ph = ph[1:] #chop ˈ stress symbol off and indicate extra tune
                 tones.append(1)
+            elif ph.startswith("ˌ"):
+                ph = ph[1:] #chop ˈ stress symbol off and indicate extra tune
+                tones.append(2)
             else:
                 tones.append(0)
             phones.append(ph)
