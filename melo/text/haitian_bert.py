@@ -3,7 +3,7 @@ import sys
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 # Use a multilingual BERT model that has seen Haitian Creole.
-MODEL_ID = 'bert-base-multilingual-cased'
+MODEL_ID = 'bert-base-multilingual-uncased'
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 model = None
 

@@ -1,12 +1,14 @@
 import re
-from phonemizer.backend import BACKENDS  # Import the BACKENDS dictionary
+from phonemizer.backend import EspeakBackend
+from phonemizer.separator import Separator
+
 from transformers import AutoTokenizer
 
-MODEL_ID = 'bert-base-multilingual-cased'
+MODEL_ID = 'bert-base-multilingual-uncased'
 tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
 
 # Initialize the eSpeak backend for Haitian Creole using the BACKENDS dictionary.
-phoneme_backend = BACKENDS['espeak']("ht", language_switch="remove-flags")
+phoneme_backend = EspeakBackend(language="ht", language_switch="remove-flags", with_stress=True, preserve_punctuation=True)
 
 def distribute_phone(n_phone, n_word):
     """
@@ -49,6 +51,10 @@ def number_to_haitian_creole(num):
     else:
         return str(num)
 
+def remove_punctuation_at_begin(text):
+    return re.sub(r'^[,.!?]+', '', text)
+
+
 def text_normalize(text):
     """
     Apply basic text normalization for Haitian Creole.
@@ -58,6 +64,8 @@ def text_normalize(text):
     text = re.sub(r'\s+', ' ', text)  # collapse multiple spaces to one
     def replace_number(match):
         return number_to_haitian_creole(match.group())
+    text = remove_punctuation_at_begin(text)
+    text = text.lower()
     return re.sub(r'\d+', replace_number, text)
 
 def g2p(text, pad_start_end=True, tokenized=None):
@@ -86,17 +94,22 @@ def g2p(text, pad_start_end=True, tokenized=None):
     for group in ph_groups:
         w = "".join(group)
         phone_len = 0
-        word_len = len(group)
+        word_len = len(group) #number of tokens per word
         if w == '[UNK]':
             phone_list = ['UNK']
         else:
             # Use the already initialized backend's phonemize() method.
-            phone = phoneme_backend.phonemize([w])[0].strip()
-            phone_list = list(filter(lambda p: p != " ", phone))
-
+            phone = phoneme_backend.phonemize([w], separator=Separator(word="",syllable="", phone="[p]"))[0].strip()
+            phone_list = phone.split("[p]")
         for ph in phone_list:
+            if len(ph) == 0:
+                continue
+            if ph.startswith("ˈ"):
+                ph = ph[1:] #chop ˈ stress symbol off and indicate extra tune
+                tones.append(1)
+            else:
+                tones.append(0)
             phones.append(ph)
-            tones.append(0)
             phone_len += 1
 
         # Evenly distribute the phonemes across subword tokens.
@@ -115,7 +128,7 @@ def get_bert_feature(text, word2ph, device=None):
     return haitian_bert.get_bert_feature(text, word2ph, device=device)
 
 if __name__ == "__main__":
-    sample_text = "Lavwadlamerik se pi gwo òganizasyon nouvèl medya entènasyonal Lèzetazini."
+    sample_text = "òganizasyon nouvèl."
     norm_text = text_normalize(sample_text)
     print("Normalized text:", norm_text)
     
